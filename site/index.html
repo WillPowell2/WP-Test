@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Morning Markets</title>
+  <meta name="description" content="Personal markets dashboard: yield curves, credit spreads, equities, VIX and FX.">
+  <meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="top-row">
+      <h1>Morning Markets</h1>
+      <button id="refresh" class="icon-btn" type="button" aria-label="Refresh data" title="Refresh">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <p id="asof" class="asof">Loading…</p>
+    <div class="ranges" role="radiogroup" aria-label="Time range">
+      <button type="button" role="radio" data-range="1M">1M</button>
+      <button type="button" role="radio" data-range="3M">3M</button>
+      <button type="button" role="radio" data-range="6M">6M</button>
+      <button type="button" role="radio" data-range="YTD">YTD</button>
+      <button type="button" role="radio" data-range="1Y">1Y</button>
+      <button type="button" role="radio" data-range="2Y">2Y</button>
+    </div>
+  </header>
+
+  <div id="banner" class="banner" hidden></div>
+  <main id="app" aria-live="polite"></main>
+
+  <footer class="foot">
+    <p>Sources: FRED (St Louis Fed, ICE BofA indices), ECB Data Portal, Bank of England, Twelve Data.
+      Yields and spreads are end-of-day; live quotes are delayed. For personal use only.</p>
+    <details id="errors" hidden><summary>Data issues</summary><ul></ul></details>
+  </footer>
+
+  <dialog id="detail" aria-labelledby="detail-title">
+    <div class="sheet">
+      <div class="sheet-head">
+        <div>
+          <h2 id="detail-title"></h2>
+          <p id="detail-sub" class="muted"></p>
+        </div>
+        <button class="icon-btn" type="button" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="ranges in-sheet" role="radiogroup" aria-label="Time range"></div>
+      <div id="detail-chart" class="chart"></div>
+      <dl id="detail-stats" class="stats"></dl>
+      <p id="detail-source" class="muted small"></p>
+    </div>
+  </dialog>
+
+  <div id="tooltip" class="tooltip" role="status" hidden></div>
+  <script src="app.js" type="module"></script>
+</body>
+</html>
