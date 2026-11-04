@@ -1,0 +1,74 @@
+name: Update market data & deploy
+
+on:
+  schedule:
+    - cron: "35 5 * * 1-5"      # full rebuild before the morning commute (05:35 UTC)
+    - cron: "35 22 * * 1-5"     # full rebuild after the US close
+    - cron: "*/30 6-20 * * 1-5" # delayed quotes refresh (only if a Twelve Data key is set)
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["site/**", "scripts/**", ".github/workflows/update-data.yml"]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      skip: ${{ steps.mode.outputs.skip }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pick mode
+        id: mode
+        env:
+          SCHEDULE: ${{ github.event.schedule }}
+          TD_KEY: ${{ secrets.TWELVEDATA_API_KEY }}
+        run: |
+          if [ "$SCHEDULE" = "*/30 6-20 * * 1-5" ]; then
+            if [ -z "$TD_KEY" ]; then
+              echo "No TWELVEDATA_API_KEY secret - nothing to refresh intraday."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+            fi
+            echo "mode=quotes" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=full" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/configure-pages@v5
+        id: pages
+        if: steps.mode.outputs.skip != 'true'
+
+      - name: Fetch data
+        if: steps.mode.outputs.skip != 'true'
+        env:
+          TWELVEDATA_API_KEY: ${{ secrets.TWELVEDATA_API_KEY }}
+        run: |
+          python3 scripts/fetch_data.py \
+            --mode "${{ steps.mode.outputs.mode }}" \
+            --history-url "${{ steps.pages.outputs.base_url }}/data/history.json"
+
+      - uses: actions/upload-pages-artifact@v3
+        if: steps.mode.outputs.skip != 'true'
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
